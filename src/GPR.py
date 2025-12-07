@@ -210,8 +210,11 @@ class GPR(torch.nn.Module):
             T_preferred = self.preferred_duration
             U_penalty = self.straggler_penalty
 
+            # We use clamp to ensure we don't divide by zero if latency is 0
+            T_k_safe = torch.clamp(T_k_group, min=1e-6)
+
             # 2. Calculate System Utility U_sys for the candidates
-            U_sys = (T_preferred / T_k_group) ** (torch.where(T_k_group > T_preferred, 1.0, 0.0) * U_penalty)
+            U_sys = (T_preferred / T_k_safe) ** (torch.where(T_k_group > T_preferred, 1.0, 0.0) * U_penalty)
 
             # 3. Combine Utilities: Combined_Utility = U_stat * U_sys
             combined_utility = total_loss_decrease * U_sys
@@ -222,6 +225,7 @@ class GPR(torch.nn.Module):
             idx = idx.item()
             selected_idx = client_group[idx]
             p_Sigma = Sigma-Sigma[:,selected_idx:selected_idx+1].mm(Sigma[selected_idx:selected_idx+1,:])/(Sigma[selected_idx,selected_idx])
+            print(f">>> Selected {selected_idx} | Latency: {self.client_latencies[selected_idx]}"
 
             return selected_idx,p_Sigma,mld.item()
 
