@@ -40,7 +40,7 @@ class GPR(torch.nn.Module):
         # System parameters
         self.client_latencies = torch.rand(num_users, device=device) * 5.0 + 1.0
         self.preferred_duration = 5
-        self.straggler_penalty = 3
+        self.straggler_penalty = 0 # according to PyramidFL impact of penalty factors plot
 
     def Covariance(self,ids = None):
         raise NotImplementedError("A GPR class must have a function to calculate covariance matrix")
