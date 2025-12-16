@@ -42,6 +42,9 @@ class GPR(torch.nn.Module):
         self.preferred_duration = 5
         self.straggler_penalty = 0 # according to PyramidFL impact of penalty factors plot
 
+        # Initialize Cumulative Wall-Clock Time (to effectively measure system heterogeneity effect)
+        self.cumulative_time = 0.0 
+
     def Covariance(self,ids = None):
         raise NotImplementedError("A GPR class must have a function to calculate covariance matrix")
 
@@ -225,7 +228,7 @@ class GPR(torch.nn.Module):
             idx = idx.item()
             selected_idx = client_group[idx]
             p_Sigma = Sigma-Sigma[:,selected_idx:selected_idx+1].mm(Sigma[selected_idx:selected_idx+1,:])/(Sigma[selected_idx,selected_idx])
-            print(f">>> Selected {selected_idx} | Latency: {self.client_latencies[selected_idx]}"
+            print(f">>> Selected {selected_idx} | Latency: {self.client_latencies[selected_idx]}")
 
             return selected_idx,p_Sigma,mld.item()
 
@@ -243,8 +246,19 @@ class GPR(torch.nn.Module):
                     break
                 selected_clients.append(idx)
                 remain_clients.remove(idx)
+
+            # Calculate round time
             
-            return selected_clients
+            if selected_clients:
+                # Get the latencies for the final selected group
+                selected_latencies = self.client_latencies[selected_clients]
+                
+                # Determine the round time (Maximum latency = Straggler time)
+                round_time = torch.max(selected_latencies).item()
+            else:
+                round_time = 0.0
+
+            return selected_clients, round_time
     
 
     def Reset_Discount(self):

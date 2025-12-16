@@ -179,7 +179,9 @@ if __name__ == '__main__':
 
             if args.gpr and epoch>args.warmup:
                 # FedCor
-                idxs_users = gpr.Select_Clients(m,args.epsilon_greedy,weights,args.dynamic_C,args.dynamic_TH)
+                idxs_users, round_time = gpr.Select_Clients(m,args.epsilon_greedy,weights,args.dynamic_C,args.dynamic_TH)
+                # Update Cumulative Time
+                gpr.cumulative_time += round_time
                 print("GPR Chosen Clients:",idxs_users)
 
             elif args.afl:
@@ -335,6 +337,8 @@ if __name__ == '__main__':
             print("|---- Mean GP Prediction Loss: {:.4f}".format(np.mean(predict_losses)))
 
         print('\n Total Run Time: {0:0.4f}'.format(time.time()-start_time))
+        # Output the final wall-clock time
+        print(f"Total Simulated Wall-Clock Time: {gpr.cumulative_time:.2f} seconds") 
 
         # save the training records:
         with open(file_name+'_{}.pkl'.format(seed), 'wb') as f:
